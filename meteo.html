@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Météo Lille</title>
+<style>
+  body {
+    margin: 0;
+    background: #ffffff;
+    font-family: Arial, sans-serif;
+    color: #111;
+    overflow: hidden;
+  }
+  .container {
+    width: 1920px;
+    height: 1080px;
+    padding: 60px;
+    box-sizing: border-box;
+  }
+  .title {
+    font-size: 90px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 40px;
+  }
+  .grid {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 40px;
+  }
+  .day {
+    width: 30%;
+    text-align: center;
+    font-size: 50px;
+  }
+  .icon {
+    width: 200px;
+    height: 200px;
+    margin: 20px auto;
+  }
+  .temp-now {
+    font-size: 120px;
+    font-weight: bold;
+  }
+  .temp-range {
+    font-size: 60px;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="title">LILLE</div>
+  <div class="grid">
+    <div class="day" id="d0"></div>
+    <div class="day" id="d1"></div>
+    <div class="day" id="d2"></div>
+  </div>
+</div>
+
+<script>
+const url = "https://api.open-meteo.com/v1/forecast?latitude=50.63&longitude=3.06&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe/Paris&forecast_days=3&language=fr";
+
+const icons = {
+  0: "☀️",
+  1: "🌤",
+  2: "⛅",
+  3: "☁️",
+  45: "🌫",
+  48: "🌫",
+  51: "🌦",
+  61: "🌧",
+  63: "🌧",
+  65: "🌧",
+  80: "🌧",
+  81: "🌧",
+  82: "⛈",
+  95: "⛈",
+};
+
+function displayWeather() {
+  fetch(url).then(r => r.json()).then(data => {
+    const days = ["Aujourd’hui", "Demain", "Après-demain"];
+    for (let i = 0; i < 3; i++) {
+      const code = (i === 0) ? data.current_weather.weathercode : data.daily.weathercode[i];
+      const tempNow = (i === 0) ? data.current_weather.temperature : "";
+      const tmax = data.daily.temperature_2m_max[i];
+      const tmin = data.daily.temperature_2m_min[i];
+      document.getElementById("d"+i).innerHTML =
+        `<div>${days[i]}</div>
+         <div class="icon">${icons[code] || "❓"}</div>
+         ${i === 0 ? `<div class="temp-now">${tempNow}°C</div>` : ""}
+         <div class="temp-range">${tmin}°C / ${tmax}°C</div>`;
+    }
+  });
+}
+
+displayWeather();
+setInterval(displayWeather, 1800000); // toutes les 30 min
+</script>
+
+</body>
+</html>
