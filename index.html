@@ -103,84 +103,10 @@
 
 <script>
 const API_URL =
- "https://api.open-meteo.com/v1/forecast?latitude=50.63&longitude=3.06&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min,time&timezone=Europe/Paris&forecast_days=3&language=fr";
+ "https://api.open-meteo.com/v1/forecast" +
+ "?latitude=50.63&longitude=3.06" +
+ "&current_weather=true" +
+ "&daily=weathercode,temperature_2m_max,temperature_2m_min,time" +
+ "&timezone=Europe/Paris&forecast_days=3&language=fr";
 
-const icons = {
-  0:"☀️",1:"🌤",2:"⛅",3:"☁️",
-  45:"🌫",48:"🌫",
-  51:"🌦",53:"🌦",55:"🌦",
-  61:"🌧",63:"🌧",65:"🌧",
-  80:"🌧",81:"🌧",82:"🌧",
-  95:"⛈",96:"⛈",99:"⛈"
-};
-
-const desc = {
-  0:"Ciel dégagé",
-  1:"Peu nuageux",
-  2:"Partiellement nuageux",
-  3:"Couvert",
-  45:"Brouillard",
-  48:"Brouillard givrant",
-  51:"Bruine légère",
-  53:"Bruine",
-  55:"Bruine forte",
-  61:"Pluie légère",
-  63:"Pluie modérée",
-  65:"Pluie forte",
-  80:"Averses",
-  81:"Averses marquées",
-  82:"Fortes averses",
-  95:"Orages",
-  96:"Orages avec grêle",
-  99:"Fortes orages"
-};
-
-function formatDateLabel(str){
-  const d = new Date(str);
-  return d.toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"short"});
-}
-
-function updateWeather(){
-  fetch(API_URL)
-    .then(r => r.json())
-    .then(data => {
-      const daysText = ["Aujourd'hui","Demain","Après-demain"];
-      for(let i=0;i<3;i++){
-        const code = data.daily.weathercode[i];
-        const tmax = Math.round(data.daily.temperature_2m_max[i]);
-        const tmin = Math.round(data.daily.temperature_2m_min[i]);
-        const label = daysText[i];
-        const dateLabel = formatDateLabel(data.daily.time[i]);
-        let tempNowHtml = "";
-        if(i===0){
-          const tnow = Math.round(data.current_weather.temperature);
-          tempNowHtml = `<div class="temp-now">${tnow}°C</div>`;
-        }
-        const html = `
-          <div>
-            <div class="day-label">${label}</div>
-            <div class="date-label">${dateLabel}</div>
-            <div class="icon">${icons[code] || "❓"}</div>
-            ${tempNowHtml}
-            <div class="temp-range">${tmin}°C / ${tmax}°C</div>
-            <div class="desc">${desc[code] || ""}</div>
-          </div>
-        `;
-        document.getElementById("d"+i).innerHTML = html;
-      }
-      const upd = new Date(data.current_weather.time);
-      document.getElementById("footer").textContent =
-        "Données : Open-Meteo – Maj " +
-        upd.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
-    })
-    .catch(e=>{
-      document.getElementById("subtitle").textContent =
-        "Erreur de récupération des données météo";
-    });
-}
-
-updateWeather();
-setInterval(updateWeather, 30*60*1000);
-</script>
-</body>
-</html>
+cons
