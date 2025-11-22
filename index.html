@@ -399,6 +399,7 @@
 </div>
 
 <script>
+<script>
 const API_URL =
   "https://api.open-meteo.com/v1/forecast" +
   "?latitude=50.63&longitude=3.06" +
@@ -406,152 +407,55 @@ const API_URL =
   "&daily=weathercode,temperature_2m_max,temperature_2m_min,time" +
   "&timezone=Europe/Paris&forecast_days=3&language=fr";
 
-/* Mapping des codes Open-Meteo → catégories + description */
-function getWeatherCategory(code) {
-  if ([0].includes(code)) return "clear";
-  if ([1,2].includes(code)) return "cloudy";
-  if ([3].includes(code)) return "cloudy";
-  if ([45,48].includes(code)) return "fog";
-  if ([51,53,55].includes(code)) return "rain";
-  if ([61,63,65,80,81,82].includes(code)) return "rain";
-  if ([71,73,75,77,85,86].includes(code)) return "snow";
-  if ([95,96,99].includes(code)) return "storm";
-  return "cloudy";
+/* --- RÉCUPÉRATION DES DONNÉES COMPATIBLE ANCIEN WEBVIEW --- */
+
+function loadWeatherData(onSuccess, onError) {
+  // Si fetch existe et semble utilisable
+  if (typeof window.fetch === "function") {
+    fetch(API_URL)
+      .then(function(r){ 
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json(); 
+      })
+      .then(onSuccess)
+      .catch(function(err){
+        console.error("Erreur fetch :", err);
+        onError(err);
+      });
+  } else {
+    // Fallback XMLHttpRequest (plus compatible Android / vieux WebView)
+    try {
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", API_URL, true);
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            try {
+              var data = JSON.parse(xhr.responseText);
+              onSuccess(data);
+            } catch (e) {
+              console.error("Erreur JSON :", e);
+              onError(e);
+            }
+          } else {
+            onError(new Error("HTTP " + xhr.status));
+          }
+        }
+      };
+      xhr.onerror = function () {
+        onError(new Error("Erreur réseau XHR"));
+      };
+      xhr.send();
+    } catch(e) {
+      console.error("Erreur XHR :", e);
+      onError(e);
+    }
+  }
 }
 
-const iconMap = {
-  clear: "☀️",
-  cloudy: "⛅",
-  rain: "🌧️",
-  storm: "⛈️",
-  snow: "🌨️",
-  fog: "🌫️"
-};
+/* --- LOGIQUE MÉTÉO / AFF*
 
-const descMap = {
-  clear: "Ciel dégagé",
-  cloudy: "Ciel partiellement nuageux",
-  rain: "Pluie ou averses",
-  storm: "Orages",
-  snow: "Neige",
-  fog: "Brouillard ou brume"
-};
-
-function formatDayLabel(index) {
-  if (index === 0) return "Aujourd'hui";
-  if (index === 1) return "Demain";
-  return "Après-demain";
-}
-
-function formatDateLabel(str) {
-  const d = new Date(str);
-  return d.toLocaleDateString("fr-FR", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short"
-  });
-}
-
-function applyTheme(category) {
-  const body = document.body;
-  body.classList.remove(
-    "weather-clear",
-    "weather-cloudy",
-    "weather-rain",
-    "weather-storm",
-    "weather-snow",
-    "weather-fog"
-  );
-  const catClass = {
-    clear: "weather-clear",
-    cloudy: "weather-cloudy",
-    rain: "weather-rain",
-    storm: "weather-storm",
-    snow: "weather-snow",
-    fog: "weather-fog"
-  }[category] || "weather-cloudy";
-  body.classList.add(catClass);
-}
-
-function updateWeather() {
-  fetch(API_URL)
-    .then(r => r.json())
-    .then(data => {
-      const days = data.daily.time;
-      const codes = data.daily.weathercode;
-      const tmax = data.daily.temperature_2m_max;
-      const tmin = data.daily.temperature_2m_min;
-      const currentCode = data.current_weather.weathercode;
-      const currentTemp = Math.round(data.current_weather.temperature);
-      const currentCat = getWeatherCategory(currentCode);
-
-      // thème fond + animation
-      applyTheme(currentCat);
-
-      for (let i = 0; i < 3; i++) {
-        const cat = getWeatherCategory(codes[i]);
-        const icon = iconMap[cat] || "⛅";
-        const desc = descMap[cat] || "";
-        const max = Math.round(tmax[i]);
-        const min = Math.round(tmin[i]);
-        const dayName = formatDayLabel(i);
-        const dateLabel = formatDateLabel(days[i]);
-        const elem = document.getElementById("d" + i);
-
-        const nowHtml = i === 0
-          ? `<div class="temp-now">${currentTemp}°C</div>`
-          : `<div class="temp-now" style="font-size:60px;">${max}°C</div>`;
-
-        const rangeHtml = i === 0
-          ? `<div class="temp-range">Min ${min}°C / Max ${max}°C</div>`
-          : `<div class="temp-range">${min}°C / ${max}°C</div>`;
-
-        const tag1 = i === 0 ? "Actuel" : "Prévision";
-        const tag2 = cat === "rain" ? "Précipitations" :
-                     cat === "storm" ? "Risque d’orage" :
-                     cat === "snow" ? "Risque de neige" :
-                     cat === "fog" ? "Visibilité réduite" :
-                     "Conditions stables";
-
-        elem.innerHTML = `
-          <div>
-            <div class="day-header">
-              <div class="day-name">${dayName}</div>
-              <div class="day-date">${dateLabel}</div>
-            </div>
-            <div class="icon-wrap">
-              <div class="icon">${icon}</div>
-            </div>
-            ${nowHtml}
-            ${rangeHtml}
-            <div class="desc">${desc}</div>
-          </div>
-          <div class="extra-row">
-            <div class="tag-pill">${tag1}</div>
-            <div class="tag-pill">${tag2}</div>
-          </div>
-        `;
-      }
-
-      const upd = new Date(data.current_weather.time);
-      document.getElementById("update-time").textContent =
-        upd.toLocaleString("fr-FR", {
-          weekday: "short",
-          hour: "2-digit",
-          minute: "2-digit"
-        });
-      document.getElementById("subtitle").textContent =
-        "Prévisions locales mises à jour en temps réel";
-    })
-    .catch(err => {
-      console.error(err);
-      document.getElementById("subtitle").textContent =
-        "Erreur de récupération des données météo";
-    });
-}
-
-updateWeather();
-setInterval(updateWeather, 30 * 60 * 1000);
 </script>
 </body>
 </html>
+
