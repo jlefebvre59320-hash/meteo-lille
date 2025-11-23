@@ -1,0 +1,31 @@
+name: MAJ Météo Lille
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Fetch Meteo
+      run: |
+        curl "https://api.open-meteo.com/v1/forecast?latitude=50.63&longitude=3.06&daily=weathercode,temperature_2m_max,temperature_2m_min&current_weather=true&timezone=Europe/Paris" > meteo.json
+
+    - name: Build HTML
+      run: |
+        node build.js
+
+    - name: Commit changes
+      run: |
+        git config --global user.email "meteo@bot.fr"
+        git config --global user.name "Meteo Bot"
+        git add index.html meteo.json
+        git commit -m "MAJ météo" || echo "Rien à commit"
+
+    - name: Push
+      uses: ad-m/github-push-action@v0.6.0
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
