@@ -2,103 +2,118 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="1800"> <!-- Refresh 30 min -->
-<title>Météo Lille</title>
+<title>Météo Lille – Affichage</title>
+<meta http-equiv="refresh" content="1800"> <!-- Refresh auto 30min -->
 <style>
 html, body {
   margin: 0; padding: 0;
-  overflow: hidden;
   width: 100vw; height: 100vh;
   background: #000;
   font-family: Arial, sans-serif;
-  color: white;
+  color: #fff;
+  overflow: hidden;
 }
 
-/* Map fullscreen left 80% */
-#map {
-  position: absolute; top: 0; left: 0;
-  width: 80%; height: 100%;
-  border: none;
-}
-
-/* Sidebar right 20% */
-#sidebar {
-  position: absolute; top: 0; right: 0;
-  width: 20%; height: 100%;
-  background: rgba(0,0,0,0.65);
-  display: flex; flex-direction: column;
-  justify-content: space-between;
-  padding: 10px;
-}
-
-/* Horloge style TV */
-#clock {
-  font-size: 2.4em;
-  text-align: center;
-  font-weight: bold;
-  margin: 12px 0;
-  text-shadow: 0 0 12px black;
-}
-
-/* Bloc jours style TV avec séparateurs */
-.day {
-  height: 25%;
+/* Contenu centré plein écran */
+.container {
+  width: 100%;
+  height: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  flex-direction: column;
-  border-bottom: 1px solid rgba(255,255,255,0.15);
 }
 
-.day:last-child {
-  border-bottom: none;
+/* Horloge */
+#clock {
+  font-size: 6vw;
+  font-weight: bold;
+  margin-bottom: 3vh;
+  text-shadow: 0 0 25px rgba(255,255,255,0.4);
+}
+
+/* Bloc jours */
+#forecast {
+  width: 80%;
+  display: flex;
+  justify-content: space-around;
+}
+
+.day {
+  background: rgba(255,255,255,0.1);
+  width: 25%;
+  border-radius: 18px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  border: 1px solid rgba(255,255,255,0.2);
 }
 
 .day h3 {
-  margin: 5px 0;
-  font-size: 1.6em;
+  margin: 0 0 10px;
+  font-size: 2.2vw;
   text-transform: capitalize;
 }
 
 .icon {
-  font-size: 2.8em;
-  margin: 6px 0;
+  font-size: 4vw;
+  margin-bottom: 10px;
 }
 
 .temp {
-  font-size: 1.8em;
+  font-size: 3vw;
   font-weight: bold;
 }
 </style>
 </head>
 
 <body>
-
-<!-- 🔥 Ventusky sans timeline -->
-<iframe id="map"
-  src="https://embed.ventusky.com/?p=50.63;3.06;6&l=wind,precipitation,temperature-2m&w=soft&fullscreen=1"
-  frameborder="0" scrolling="no">
-</iframe>
-
-<div id="sidebar">
+<div class="container">
   <div id="clock"></div>
   <div id="forecast"></div>
 </div>
 
 <script>
-// 🕑 Horloge dynamique
+// Horloge en temps réel
 function updateClock() {
-  let now = new Date();
   document.getElementById("clock").innerText =
-    now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    new Date().toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// 🌤️ API météo
+// API météo
 const api = "https://api.open-meteo.com/v1/forecast?latitude=50.63&longitude=3.06&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe/Paris";
 
 const icons = {
-  0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",48:"🌫️",
-  51:"🌦️",53:"🌦️",55:"🌦️",61:"🌧️",63:"🌧️",65:"🌧️",
-  7
+  0:"☀️",1:"🌤️",2:"⛅",3:"☁️",
+  45:"🌫️",48:"🌫️",
+  51:"🌧️",53:"🌧️",55:"🌧️",
+  61:"🌧️",63:"🌧️",65:"🌧️",
+  71:"❄️",73:"❄️",75:"❄️",
+  95:"⛈️",96:"⛈️",99:"⛈️"
+};
+
+fetch(api).then(r=>r.json()).then(data=>{
+  const fc = document.getElementById("forecast");
+  fc.innerHTML = "";
+  
+  for(let i=0;i<3;i++){
+    let day = new Date(data.daily.time[i])
+      .toLocaleDateString("fr-FR",{weekday:"short"});
+    let code = data.daily.weathercode[i];
+    let icon = icons[code] ?? "🌡️";
+    let tmax = Math.round(data.daily.temperature_2m_max[i]);
+    let tmin = Math.round(data.daily.temperature_2m_min[i]);
+
+    fc.innerHTML += `
+      <div class="day">
+        <h3>${day}</h3>
+        <div class="icon">${icon}</div>
+        <div class="temp">${tmax}° / ${tmin}°</div>
+      </div>`;
+  }
+});
+</script>
+</body>
+</html>
