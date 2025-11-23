@@ -74,17 +74,18 @@ html, body {
 </div>
 
 <script>
-// Horloge en temps réel
+// Horloge
 function updateClock() {
-  document.getElementById("clock").innerText =
-    new Date().toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
+  const now = new Date();
+  const hh = now.getHours().toString().padStart(2, "0");
+  const mm = now.getMinutes().toString().padStart(2, "0");
+  document.getElementById("clock").textContent = `${hh}:${mm}`;
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// API météo
+// WEATHER
 const api = "https://api.open-meteo.com/v1/forecast?latitude=50.63&longitude=3.06&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe/Paris";
-
 const icons = {
   0:"☀️",1:"🌤️",2:"⛅",3:"☁️",
   45:"🌫️",48:"🌫️",
@@ -94,26 +95,34 @@ const icons = {
   95:"⛈️",96:"⛈️",99:"⛈️"
 };
 
-fetch(api).then(r=>r.json()).then(data=>{
-  const fc = document.getElementById("forecast");
-  fc.innerHTML = "";
-  
-  for(let i=0;i<3;i++){
-    let day = new Date(data.daily.time[i])
-      .toLocaleDateString("fr-FR",{weekday:"short"});
-    let code = data.daily.weathercode[i];
-    let icon = icons[code] ?? "🌡️";
-    let tmax = Math.round(data.daily.temperature_2m_max[i]);
-    let tmin = Math.round(data.daily.temperature_2m_min[i]);
+function loadWeather() {
+  fetch(api).then(r=>r.json()).then(data=>{
+    const fc = document.getElementById("forecast");
+    if (!fc) return;
+    fc.innerHTML = "";
+    for (let i=0; i<3; i++){
+      let day = new Date(data.daily.time[i])
+        .toLocaleDateString("fr-FR",{weekday:"short"});
+      let icon = icons[data.daily.weathercode[i]] || "🌡️";
+      let tmax = Math.round(data.daily.temperature_2m_max[i]);
+      let tmin = Math.round(data.daily.temperature_2m_min[i]);
 
-    fc.innerHTML += `
-      <div class="day">
-        <h3>${day}</h3>
-        <div class="icon">${icon}</div>
-        <div class="temp">${tmax}° / ${tmin}°</div>
-      </div>`;
-  }
-});
+      fc.innerHTML += `
+        <div class="day">
+          <h3>${day}</h3>
+          <div class="icon">${icon}</div>
+          <div class="temp">${tmax}° / ${tmin}°</div>
+        </div>
+      `;
+    }
+  }).catch(()=>{
+    document.getElementById("forecast").innerHTML =
+      "<div style='font-size:3vw;color:#FEE;'>Météo indisponible</div>";
+  });
+}
+loadWeather();
+setInterval(loadWeather, 900000); // 15 minutes
 </script>
 </body>
 </html>
+
