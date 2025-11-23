@@ -1,91 +1,18 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title>Météo Lille – Affichage</title>
-<meta http-equiv="refresh" content="1800"> <!-- Refresh auto 30min -->
-<style>
-html, body {
-  margin: 0; padding: 0;
-  width: 100vw; height: 100vh;
-  background: #000;
-  font-family: Arial, sans-serif;
-  color: #fff;
-  overflow: hidden;
-}
-
-/* Contenu centré plein écran */
-.container {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Horloge */
-#clock {
-  font-size: 6vw;
-  font-weight: bold;
-  margin-bottom: 3vh;
-  text-shadow: 0 0 25px rgba(255,255,255,0.4);
-}
-
-/* Bloc jours */
-#forecast {
-  width: 80%;
-  display: flex;
-  justify-content: space-around;
-}
-
-.day {
-  background: rgba(255,255,255,0.1);
-  width: 25%;
-  border-radius: 18px;
-  padding: 20px;
-  text-align: center;
-  box-shadow: 0 0 20px rgba(0,0,0,0.6);
-  border: 1px solid rgba(255,255,255,0.2);
-}
-
-.day h3 {
-  margin: 0 0 10px;
-  font-size: 2.2vw;
-  text-transform: capitalize;
-}
-
-.icon {
-  font-size: 4vw;
-  margin-bottom: 10px;
-}
-
-.temp {
-  font-size: 3vw;
-  font-weight: bold;
-}
-</style>
-</head>
-
-<body>
-<div class="container">
-  <div id="clock"></div>
-  <div id="forecast"></div>
-</div>
-
 <script>
-// Horloge
+// --- HORLOGE ---
 function updateClock() {
   const now = new Date();
-  const hh = now.getHours().toString().padStart(2, "0");
-  const mm = now.getMinutes().toString().padStart(2, "0");
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
   document.getElementById("clock").textContent = `${hh}:${mm}`;
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// WEATHER
-const api = "https://api.open-meteo.com/v1/forecast?latitude=50.63&longitude=3.06&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe/Paris";
+// --- METEO ---
+const API =
+  "https://api.open-meteo.com/v1/forecast?latitude=50.63&longitude=3.06&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe/Paris";
+
 const icons = {
   0:"☀️",1:"🌤️",2:"⛅",3:"☁️",
   45:"🌫️",48:"🌫️",
@@ -96,33 +23,35 @@ const icons = {
 };
 
 function loadWeather() {
-  fetch(api).then(r=>r.json()).then(data=>{
-    const fc = document.getElementById("forecast");
-    if (!fc) return;
-    fc.innerHTML = "";
-    for (let i=0; i<3; i++){
-      let day = new Date(data.daily.time[i])
-        .toLocaleDateString("fr-FR",{weekday:"short"});
-      let icon = icons[data.daily.weathercode[i]] || "🌡️";
-      let tmax = Math.round(data.daily.temperature_2m_max[i]);
-      let tmin = Math.round(data.daily.temperature_2m_min[i]);
+  fetch(API)
+    .then(r => r.json())
+    .then(data => {
+      const fc = document.getElementById("forecast");
+      fc.innerHTML = "";
 
-      fc.innerHTML += `
-        <div class="day">
-          <h3>${day}</h3>
-          <div class="icon">${icon}</div>
-          <div class="temp">${tmax}° / ${tmin}°</div>
-        </div>
-      `;
-    }
-  }).catch(()=>{
-    document.getElementById("forecast").innerHTML =
-      "<div style='font-size:3vw;color:#FEE;'>Météo indisponible</div>";
-  });
+      for (let i = 0; i < 3; i++) {
+        const date = new Date(data.daily.time[i]);
+        const day = date.toLocaleDateString("fr-FR",{weekday:"short"});
+        const code = data.daily.weathercode[i];
+        const icon = icons[code] ?? "🌡️";
+        const tmax = Math.round(data.daily.temperature_2m_max[i]);
+        const tmin = Math.round(data.daily.temperature_2m_min[i]);
+
+        fc.innerHTML += `
+          <div class="day">
+            <h3>${day}</h3>
+            <div class="icon">${icon}</div>
+            <div class="temp">${tmax}° / ${tmin}°</div>
+          </div>`;
+      }
+    })
+    .catch(() => {
+      document.getElementById("forecast").innerHTML =
+        "<div style='font-size:3vw;color:#f77;'>Erreur météo</div>";
+    });
 }
-loadWeather();
-setInterval(loadWeather, 900000); // 15 minutes
-</script>
-</body>
-</html>
 
+// Mise à jour météo toutes les 10 minutes + au démarrage
+loadWeather();
+setInterval(loadWeather, 600000);
+</script>
