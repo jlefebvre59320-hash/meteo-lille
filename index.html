@@ -2,104 +2,103 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="1800"> <!-- Refresh toutes les 30 min -->
+<meta http-equiv="refresh" content="1800"> <!-- Refresh 30 min -->
 <title>Météo Lille</title>
 <style>
 html, body {
-  margin: 0; padding: 0; overflow: hidden;
-  background: #000;
+  margin: 0; padding: 0;
+  overflow: hidden;
   width: 100vw; height: 100vh;
+  background: #000;
   font-family: Arial, sans-serif;
   color: white;
 }
+
+/* Map fullscreen left 80% */
 #map {
   position: absolute; top: 0; left: 0;
-  width: 75%; height: 100%;
+  width: 80%; height: 100%;
+  border: none;
 }
+
+/* Sidebar right 20% */
 #sidebar {
-  position: absolute; right: 0; top: 0;
-  width: 25%; height: 100%;
-  background: rgba(0,0,0,0.55);
+  position: absolute; top: 0; right: 0;
+  width: 20%; height: 100%;
+  background: rgba(0,0,0,0.65);
   display: flex; flex-direction: column;
   justify-content: space-between;
   padding: 10px;
 }
-.day {
-  flex: 1;
-  background: rgba(255,255,255,0.12);
-  border-radius: 12px;
-  margin: 10px 0;
-  display: flex; flex-direction: column;
-  justify-content: center; align-items: center;
-  text-align: center;
-}
-.day h3 { margin: 5px 0; font-size: 1.4em; }
-.temp { font-size: 1.8em; font-weight: bold; }
-.icon { font-size: 2.2em; margin: 5px 0; }
+
+/* Horloge style TV */
 #clock {
-  font-size: 1.8em; text-align: center; font-weight: bold;
-  text-shadow: 2px 2px 6px black;
-  margin-bottom: 5px;
+  font-size: 2.4em;
+  text-align: center;
+  font-weight: bold;
+  margin: 12px 0;
+  text-shadow: 0 0 12px black;
+}
+
+/* Bloc jours style TV avec séparateurs */
+.day {
+  height: 25%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+
+.day:last-child {
+  border-bottom: none;
+}
+
+.day h3 {
+  margin: 5px 0;
+  font-size: 1.6em;
+  text-transform: capitalize;
+}
+
+.icon {
+  font-size: 2.8em;
+  margin: 6px 0;
+}
+
+.temp {
+  font-size: 1.8em;
+  font-weight: bold;
 }
 </style>
 </head>
+
 <body>
 
-<!-- Carte météo Ventusky -->
+<!-- 🔥 Ventusky sans timeline -->
 <iframe id="map"
-  src="https://embed.ventusky.com/?p=50.63;3.06;6&l=wind,precipitation,temperature-2m&w=soft"
+  src="https://embed.ventusky.com/?p=50.63;3.06;6&l=wind,precipitation,temperature-2m&w=soft&fullscreen=1"
   frameborder="0" scrolling="no">
 </iframe>
 
 <div id="sidebar">
   <div id="clock"></div>
-
   <div id="forecast"></div>
 </div>
 
 <script>
-// 🕑 Horloge
+// 🕑 Horloge dynamique
 function updateClock() {
-  const now = new Date();
+  let now = new Date();
   document.getElementById("clock").innerText =
     now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
 setInterval(updateClock, 1000);
 updateClock();
 
-// 🌦️ API météo 3 jours - Open-Meteo (gratuit)
-const url = "https://api.open-meteo.com/v1/forecast?latitude=50.63&longitude=3.06&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FParis";
-fetch(url)
-  .then(r => r.json())
-  .then(data => {
-    const icons = {
-      0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️",
-      45: "🌫️", 48: "🌫️",
-      51: "🌦️", 61: "🌧️", 63: "🌧️", 65: "🌧️",
-      71: "❄️", 73: "❄️", 75: "❄️",
-      95: "⛈️", 96: "⛈️", 99: "⛈️"
-    };
+// 🌤️ API météo
+const api = "https://api.open-meteo.com/v1/forecast?latitude=50.63&longitude=3.06&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe/Paris";
 
-    const forecastDiv = document.getElementById("forecast");
-    forecastDiv.innerHTML = "";
-
-    for (let i = 0; i < 3; i++) {
-      const day = new Date(data.daily.time[i])
-        .toLocaleDateString("fr-FR", { weekday: "short" });
-      const code = data.daily.weathercode[i];
-      const tempMax = Math.round(data.daily.temperature_2m_max[i]);
-      const tempMin = Math.round(data.daily.temperature_2m_min[i]);
-      const icon = icons[code] ?? "🌡️";
-
-      forecastDiv.innerHTML += `
-        <div class="day">
-          <h3>${day}</h3>
-          <div class="icon">${icon}</div>
-          <div class="temp">${tempMax}° / ${tempMin}°</div>
-        </div>`;
-    }
-  });
-</script>
-
-</body>
-</html>
+const icons = {
+  0:"☀️",1:"🌤️",2:"⛅",3:"☁️",45:"🌫️",48:"🌫️",
+  51:"🌦️",53:"🌦️",55:"🌦️",61:"🌧️",63:"🌧️",65:"🌧️",
+  7
