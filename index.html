@@ -2,18 +2,19 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Météo Lille – Pro Display</title>
-
+<title>Météo Lille – Affichage</title>
+<meta http-equiv="refresh" content="1800"> <!-- Refresh auto 30min -->
 <style>
 html, body {
   margin: 0; padding: 0;
   width: 100vw; height: 100vh;
-  background: linear-gradient(135deg, #00111E, #013B55);
-  font-family: 'Segoe UI', Arial, sans-serif;
+  background: #000;
+  font-family: Arial, sans-serif;
   color: #fff;
   overflow: hidden;
 }
 
+/* Contenu centré plein écran */
 .container {
   width: 100%;
   height: 100%;
@@ -23,76 +24,67 @@ html, body {
   align-items: center;
 }
 
+/* Horloge */
 #clock {
   font-size: 6vw;
-  font-weight: 600;
-  margin-bottom: 2vh;
-  text-shadow: 0 0 25px rgba(0,200,255,0.7);
+  font-weight: bold;
+  margin-bottom: 3vh;
+  text-shadow: 0 0 25px rgba(255,255,255,0.4);
 }
 
+/* Bloc jours */
 #forecast {
-  width: 90%;
+  width: 80%;
   display: flex;
-  justify-content: space-between;
-  gap: 2vw;
+  justify-content: space-around;
 }
 
 .day {
-  flex: 1;
-  background: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.1);
+  width: 25%;
   border-radius: 18px;
   padding: 20px;
   text-align: center;
-  box-shadow: 0 0 20px rgba(0,200,255,0.3);
+  box-shadow: 0 0 20px rgba(0,0,0,0.6);
   border: 1px solid rgba(255,255,255,0.2);
-  backdrop-filter: blur(5px);
-  opacity: 0;
-  transform: translateY(30px);
-  animation: fadeUp .7s forwards;
-}
-
-.day:nth-child(2) { animation-delay: .2s; }
-.day:nth-child(3) { animation-delay: .4s; }
-
-@keyframes fadeUp {
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .day h3 {
-  font-size: 2.3vw;
-  margin-bottom: 10px;
+  margin: 0 0 10px;
+  font-size: 2.2vw;
+  text-transform: capitalize;
 }
 
 .icon {
-  font-size: 4.5vw;
+  font-size: 4vw;
   margin-bottom: 10px;
-  filter: drop-shadow(0 0 12px rgba(0,200,255,0.7));
 }
 
 .temp {
   font-size: 3vw;
   font-weight: bold;
-  text-shadow: 0 0 10px rgba(0,200,255,0.8);
-  color: #A9EFFF;
 }
 </style>
 </head>
 
 <body>
 <div class="container">
-  <div id="clock">--:--</div>
+  <div id="clock"></div>
   <div id="forecast"></div>
 </div>
 
 <script>
-// Horloge
+// Horloge en temps réel
 function updateClock() {
   document.getElementById("clock").innerText =
     new Date().toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
 }
-setInterval(updateClock, 1000); updateClock();
+setInterval(updateClock, 1000);
+updateClock();
 
-// Icons
+// API météo
+const api = "https://api.open-meteo.com/v1/forecast?latitude=50.63&longitude=3.06&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe/Paris";
+
 const icons = {
   0:"☀️",1:"🌤️",2:"⛅",3:"☁️",
   45:"🌫️",48:"🌫️",
@@ -102,41 +94,26 @@ const icons = {
   95:"⛈️",96:"⛈️",99:"⛈️"
 };
 
-const API_URL = "https://api.open-meteo.com/v1/forecast?latitude=50.63&longitude=3.06&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe/Paris";
-
-async function loadWeather() {
-  try {
-    const res = await fetch(API_URL, { cache: "no-store" });
-    const data = await res.json();
-    localStorage.setItem("meteoCache", JSON.stringify(data));
-    display(data);
-  } catch (e) {
-    let cache = localStorage.getItem("meteoCache");
-    if(cache) display(JSON.parse(cache));
-    else fallback();
-  }
-}
-
-function display(data) {
+fetch(api).then(r=>r.json()).then(data=>{
   const fc = document.getElementById("forecast");
   fc.innerHTML = "";
+  
   for(let i=0;i<3;i++){
-    let day = new Date(data.daily.time[i]).toLocaleDateString("fr-FR",{weekday:"short"});
+    let day = new Date(data.daily.time[i])
+      .toLocaleDateString("fr-FR",{weekday:"short"});
+    let code = data.daily.weathercode[i];
+    let icon = icons[code] ?? "🌡️";
+    let tmax = Math.round(data.daily.temperature_2m_max[i]);
+    let tmin = Math.round(data.daily.temperature_2m_min[i]);
+
     fc.innerHTML += `
       <div class="day">
         <h3>${day}</h3>
-        <div class="icon">${icons[data.daily.weathercode[i]] || "🌡️"}</div>
-        <div class="temp">${Math.round(data.daily.temperature_2m_max[i])}° / ${Math.round(data.daily.temperature_2m_min[i])}°</div>
+        <div class="icon">${icon}</div>
+        <div class="temp">${tmax}° / ${tmin}°</div>
       </div>`;
   }
-}
-
-function fallback() {
-  document.getElementById("forecast").innerHTML =
-    "<div style='font-size:3vw;color:#FEE;'>Erreur météo</div>";
-}
-
-loadWeather();
+});
 </script>
 </body>
 </html>
