@@ -1,178 +1,89 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<title>Météo Lille – Affichage Pro</title>
-
-<style>
 html, body {
   margin: 0; padding: 0;
   width: 100vw; height: 100vh;
-  background: radial-gradient(circle at top, #0284C7, #00111E);
+  background: linear-gradient(135deg, #012031, #00425a, #012031);
   background-size: 200% 200%;
-  animation: fadeBg 12s infinite alternate ease-in-out;
-  font-family: 'Segoe UI', Arial, sans-serif;
+  animation: bgMove 12s infinite alternate;
+  font-family: Arial, sans-serif;
   color: #fff;
   overflow: hidden;
 }
 
-@keyframes fadeBg {
+@keyframes bgMove {
   0% { background-position: 0% 0%; }
   100% { background-position: 100% 100%; }
 }
 
+/* Conteneur */
 .container {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
-  padding-top: 3vh;
 }
 
 /* Horloge */
 #clock {
-  font-size: 7vh;
-  font-weight: 600;
-  margin-bottom: 2vh;
-  text-shadow: 0 0 35px rgba(0,180,255,0.7);
-}
-
-/* Bloc météo */
-#current {
-  text-align: center;
-  margin-bottom: 3vh;
-  animation: fadeUp .7s forwards;
-}
-
-#current-icon {
-  font-size: 14vh;
-  margin-bottom: 1vh;
-  text-shadow: 0 0 25px rgba(0,200,255,0.8);
-}
-
-#current-temp {
-  font-size: 13vh;
+  font-size: 6vw;
   font-weight: bold;
-  color: #A9F2FF;
-  text-shadow: 0 0 20px rgba(0,200,255,1);
+  margin-bottom: 3vh;
+  text-shadow: 0 0 25px rgba(0,200,255,0.6);
+  letter-spacing: 0.08em;
 }
 
-/* Prévisions */
+/* Bloc jours */
 #forecast {
-  width: 90%;
+  width: 85%;
   display: flex;
   justify-content: space-between;
-  gap: 1vw;
-  margin-top: 2vh;
+  gap: 1.5vw;
 }
 
+/* Cartes météo */
 .day {
-  flex: 1;
-  background: rgba(255,255,255,0.08);
-  border-radius: 20px;
-  padding: 20px;
-  text-align: center;
+  background: rgba(255,255,255,0.10);
   backdrop-filter: blur(6px);
-  border: 1px solid rgba(255,255,255,0.2);
+  width: 27%;
+  border-radius: 22px;
+  padding: 25px 15px;
+  text-align: center;
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: 0 0 25px rgba(0,0,0,0.4);
+  transform: translateY(40px);
   opacity: 0;
-  transform: translateY(30px);
-  animation: fadeUp .7s forwards;
+  animation: fadeUp 0.8s forwards ease-out;
 }
 
+/* Animation d’apparition progressive */
 .day:nth-child(2) { animation-delay: .2s; }
 .day:nth-child(3) { animation-delay: .4s; }
 
 @keyframes fadeUp {
-  to { opacity: 1; transform: translateY(0); }
+  0% { opacity: 0; transform: translateY(40px); }
+  100% { opacity: 1; transform: translateY(0); }
 }
 
+/* Titres des jours */
 .day h3 {
-  margin: 0 0 5px;
-  font-size: 3.5vh;
+  margin: 0 0 12px;
+  font-size: 2.7vw;
   text-transform: capitalize;
+  text-shadow: 0 0 10px rgba(0,200,255,0.5);
 }
 
+/* Icônes météo */
 .icon {
-  font-size: 7vh;
-  margin-bottom: 1vh;
-  filter: drop-shadow(0 0 10px rgba(0,200,255,0.7));
+  font-size: 5vw;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 0 14px rgba(0,200,255,0.6));
 }
 
+/* Températures */
 .temp {
-  font-size: 4vh;
-  font-weight: bold;
+  font-size: 3.2vw;
+  font-weight: 700;
+  color: #abf0ff;
+  text-shadow: 0 0 15px rgba(0,200,255,0.8);
 }
-</style>
-</head>
-
-<body>
-<div class="container">
-  <div id="clock">--:--</div>
-
-  <div id="current">
-    <div id="current-icon">☀️</div>
-    <div id="current-temp">--°C</div>
-  </div>
-
-  <div id="forecast"></div>
-</div>
-
-<script>
-// Horloge
-function updateClock() {
-  document.getElementById("clock").innerText =
-    new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
-}
-setInterval(updateClock,1000); updateClock();
-
-// Icons
-const icons = {
-  0:"☀️",1:"🌤️",2:"⛅",3:"☁️",
-  45:"🌫️",48:"🌫️",
-  51:"🌧️",53:"🌧️",55:"🌧️",
-  61:"🌧️",63:"🌧️",65:"🌧️",
-  71:"❄️",73:"❄️",75:"❄️",
-  95:"⛈️",96:"⛈️",99:"⛈️"
-};
-
-const API = "https://api.open-meteo.com/v1/forecast?latitude=50.63&longitude=3.06&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min,time&timezone=Europe/Paris&forecast_days=3";
-
-// Load Weather
-async function loadWeather(){
-  try {
-    const res = await fetch(API,{cache:"no-store"});
-    const data = await res.json();
-    display(data);
-    localStorage.setItem("cache_meteo",JSON.stringify(data));
-  }
-  catch(e){
-    const cache = localStorage.getItem("cache_meteo");
-    if(cache) display(JSON.parse(cache));
-  }
-}
-
-function display(data){
-  // Now
-  document.getElementById("current-temp").innerText =
-    Math.round(data.current_weather.temperature) + "°C";
-  document.getElementById("current-icon").innerText =
-    icons[data.current_weather.weathercode] || "🌡️";
-
-  // Forecast
-  const fc = document.getElementById("forecast");
-  fc.innerHTML = "";
-  for(let i=0;i<3;i++){
-    const code = data.daily.weathercode[i];
-    fc.innerHTML += `
-      <div class="day">
-        <h3>${new Date(data.daily.time[i]).toLocaleDateString("fr-FR",{weekday:"short"})}</h3>
-        <div class="icon">${icons[code] || "🌡️"}</div>
-        <div class="temp">${Math.round(data.daily.temperature_2m_max[i])}° / ${Math.round(data.daily.temperature_2m_min[i])}°</div>
-      </div>`;
-  }
-}
-
-loadWeather();
-</
